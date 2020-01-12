@@ -66,6 +66,11 @@ fun initServer(port: Int): Javalin {
         handleError(ex.error, context)
     }
 
+    app.exception(Exception::class.java) { ex, context ->
+        ex.printStackTrace()
+        handleError(ErrorResponse(231, 231, ex.message!!), context)
+    }
+
     app.routes {
         path("analysis") {
             post(AnalysisController::post)

@@ -21,7 +21,7 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
 
 object TwitterIntegration {
-    suspend fun gatherFollowingTweets(accessToken: String, accessTokenSecret: String): Map<User, List<Status>> {
+    suspend fun gatherFollowingTweets(accessToken: String, accessTokenSecret: String, count: Int): Map<User, List<Status>> {
         val client = PenicillinClient {
             account {
                 application(System.getenv("TWITTER_KEY"), System.getenv("TWITTER_SECRET"))
@@ -29,7 +29,7 @@ object TwitterIntegration {
             }
         }
 
-        val users = client.friends.listUsers(count = 200).await().result.users
+        val users = client.friends.listUsers(count = count).await().result.users
         val context = Executors.newFixedThreadPool(3).asCoroutineDispatcher()
         val output = ConcurrentHashMap<User, List<Status>>()
         val jobs = ArrayList<Job>()
