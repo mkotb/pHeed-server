@@ -1,75 +1,110 @@
 package com.teamx.server.integration
 
 import com.google.cloud.language.v1.Document
+import com.google.cloud.language.v1.Entity
 import com.google.cloud.language.v1.LanguageServiceClient
-import com.google.cloud.language.v1.LanguageServiceSettings
 import com.teamx.server.model.StatusAnalysis
 import com.teamx.server.model.TweetData
 import com.teamx.server.model.UserAnalysis
 import com.teamx.server.model.UserData
-import jp.nephy.penicillin.extensions.createdAt
-import jp.nephy.penicillin.extensions.models.text
 import jp.nephy.penicillin.models.Status
 import jp.nephy.penicillin.models.User
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.launch
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.Executors
+import kotlin.math.abs
 
 object GoogleIntegration {
-    fun performSentimentAnalysis(statuses: Map<User, List<Status>>): Map<String, UserAnalysis> {
-        val collected = HashMap<String, UserAnalysis>()
+    val END_CHARACTERS = listOf('?', '.', '!')
+
+    suspend fun performSentimentAnalysis(statuses: Map<User, List<Status>>): Map<String, UserAnalysis> {
+        val collected = ConcurrentHashMap<String, UserAnalysis>()
+        val coroutineContext = Executors.newFixedThreadPool(6).asCoroutineDispatcher()
+        val jobs = ArrayList<Job>()
 
         statuses.forEach { (user, statuses) ->
             if (statuses.isEmpty()) {
                 return@forEach
             }
 
-            val client = LanguageServiceClient.create()
-            val together = statuses.joinToString( " This sentence is a splitter. ", transform = this::cleanTweet)
-            val document = Document.newBuilder().apply {
-                content = together
-                type = Document.Type.PLAIN_TEXT
-            }.build()
-            val analyses = ArrayList<StatusAnalysis>()
-            val sentences = client.analyzeSentiment (
-                    document
-            ).sentencesList
-
-            val currentSentences = ArrayList<String>()
-            var currentSentiment = 0.0
-            var index = 0
-
-            fun pushCurrent() {
-                analyses.add(StatusAnalysis(
-                        currentSentences.joinToString(" "),
-                        currentSentiment / currentSentences.size,
-                        TweetData(statuses[index])
-                ))
-
-                currentSentiment = 0.0
-                currentSentences.clear()
-
-                index++
-            }
-
-            for (sentence in sentences) {
-                if ("This sentence is a splitter." == sentence.text.content) {
-                    pushCurrent()
-                    continue
-                }
-
-                currentSentences.add(sentence.text.content)
-                currentSentiment += sentence.sentiment.score
-            }
-
-            pushCurrent()
-
-            collected[user.screenName] = UserAnalysis(
-                    UserData(user.name, user.profileImageUrlHttps),
-                    analyses
+            jobs.add (
+                    CoroutineScope(coroutineContext).launch {
+                        collected[user.screenName] = analyzeUser(user, statuses)
+                    }
             )
+        }
 
-            client.close()
+        jobs.forEach {
+            it.join()
         }
 
         return collected
+    }
+
+    fun analyzeUser(user: User, statuses: List<Status>): UserAnalysis {
+        val client = LanguageServiceClient.create()
+        val together = statuses.joinToString( " This sentence is a splitter. ", transform = this::cleanTweet)
+        val document = Document.newBuilder().apply {
+            content = together
+            type = Document.Type.PLAIN_TEXT
+        }.build()
+        val analyses = ArrayList<StatusAnalysis>()
+        val sentences = client.analyzeSentiment (
+                document
+        ).sentencesList
+
+        val currentSentences = ArrayList<String>()
+        var currentSentiment = 0.0
+        var index = 0
+
+        fun pushCurrent() {
+            val content = currentSentences.joinToString(" ")
+                    .replace(" This sentence is a splitter. ", "")
+
+            analyses.add(StatusAnalysis(
+                    content,
+                    currentSentiment / currentSentences.size,
+                    TweetData(statuses[index])
+            ))
+
+            currentSentiment = 0.0
+            currentSentences.clear()
+
+            index++
+        }
+
+        for (sentence in sentences) {
+            if ("This sentence is a splitter." == sentence.text.content) {
+                pushCurrent()
+                continue
+            }
+
+            currentSentences.add(sentence.text.content)
+            currentSentiment += sentence.sentiment.score
+        }
+
+        pushCurrent()
+
+        val originalEntities = client.analyzeEntitySentiment(document).entitiesList
+        val entitySentiments = originalEntities
+                .filter { abs(it.sentiment.score) > .35 }
+
+        fun handleEntityList(list: List<Entity>): List<String> {
+            return list.sortedByDescending { abs(it.sentiment.score) + (it.salience * 2) }
+                    .map { it.name }.distinct()
+        }
+
+        client.close()
+
+        return UserAnalysis (
+                UserData(user.name, user.screenName, user.profileImageUrlHttps),
+                analyses,
+                handleEntityList(entitySentiments.filter { it.sentiment.score > 0 }),
+                handleEntityList(entitySentiments.filter { it.sentiment.score < 0 })
+        )
     }
 
     fun cleanTweet(s: Status): String {
@@ -114,6 +149,8 @@ object GoogleIntegration {
 
         var text = builder.toString().trim()
 
+        text = text.replace("\n", " ")
+
         // strips off all non-ASCII characters
         text = text.replace("[^\\x00-\\x7F]".toRegex(), "")
 
@@ -125,7 +162,7 @@ object GoogleIntegration {
 
         text = text.trim()
 
-        if (text.lastOrNull() != '.') {
+        if (!END_CHARACTERS.contains(text.lastOrNull())) {
             text += '.'
         }
 

@@ -13,7 +13,6 @@ object AnalysisController {
             val others = TwitterIntegration.gatherFollowingTweets(request.token, request.tokenSecret)
             val self = TwitterIntegration.gatherOwnTweets(request.token, request.tokenSecret)
 
-
             context.json(AnalysisResponse(
                     GoogleIntegration.performSentimentAnalysis(others),
                     GoogleIntegration.performSentimentAnalysis(self)
