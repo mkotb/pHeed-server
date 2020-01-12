@@ -44,7 +44,7 @@ dependencies {
     // Twitter API
     compile "jp.nephy:jsonkt:4.10"
     compile "jp.nephy:penicillin:4.2.3"
-    compile "io.ktor:ktor-client-apache:1.3.0-rc"
+    compile "io.ktor:ktor-client-apache:1.2.6"
 
     // GCP API
     compile "com.google.cloud:google-cloud-language:1.99.0"

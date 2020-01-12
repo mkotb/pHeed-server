@@ -16,11 +16,13 @@ import io.javalin.http.Context
 import io.javalin.plugin.json.FromJsonMapper
 import io.javalin.plugin.json.JavalinJson
 import io.javalin.plugin.json.ToJsonMapper
-import java.io.File
-import java.io.FileReader
 import java.lang.reflect.Modifier
-import java.nio.file.Files
-import java.util.*
+
+val gson = GsonBuilder()
+        .excludeFieldsWithModifiers(Modifier.TRANSIENT)
+        .disableHtmlEscaping()
+        .create()
+
 
 fun main() {
     initServer(8080)
@@ -33,11 +35,6 @@ fun initServer(port: Int): Javalin {
     val moshi = Moshi.Builder()
             .add(KotlinJsonAdapterFactory())
             .build()
-
-    val gson = GsonBuilder()
-            .excludeFieldsWithModifiers(Modifier.TRANSIENT)
-            .disableHtmlEscaping()
-            .create()
 
     JavalinJson.fromJsonMapper = object : FromJsonMapper {
         override fun <T> map(json: String, targetClass: Class<T>): T {
