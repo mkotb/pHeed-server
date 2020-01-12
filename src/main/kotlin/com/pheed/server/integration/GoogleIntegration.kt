@@ -1,12 +1,12 @@
-package com.teamx.server.integration
+package com.pheed.server.integration
 
 import com.google.cloud.language.v1.Document
 import com.google.cloud.language.v1.Entity
 import com.google.cloud.language.v1.LanguageServiceClient
-import com.teamx.server.model.StatusAnalysis
-import com.teamx.server.model.TweetData
-import com.teamx.server.model.UserAnalysis
-import com.teamx.server.model.UserData
+import com.pheed.server.model.StatusAnalysis
+import com.pheed.server.model.TweetData
+import com.pheed.server.model.UserAnalysis
+import com.pheed.server.model.UserData
 import jp.nephy.penicillin.models.Status
 import jp.nephy.penicillin.models.User
 import kotlinx.coroutines.CoroutineScope
@@ -99,7 +99,7 @@ object GoogleIntegration {
 
         client.close()
 
-        return UserAnalysis (
+        return UserAnalysis(
                 UserData(user.name, user.screenName, user.profileImageUrlHttps),
                 analyses,
                 handleEntityList(entitySentiments.filter { it.sentiment.score > 0 }),

@@ -1,8 +1,8 @@
-package com.teamx.server.routes
+package com.pheed.server.routes
 
-import com.teamx.server.integration.GoogleIntegration
-import com.teamx.server.integration.TwitterIntegration
-import com.teamx.server.model.UserAnalysis
+import com.pheed.server.integration.GoogleIntegration
+import com.pheed.server.integration.TwitterIntegration
+import com.pheed.server.model.UserAnalysis
 import io.javalin.http.Context
 import kotlinx.coroutines.runBlocking
 

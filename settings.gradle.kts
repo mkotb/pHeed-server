@@ -1,1 +1,1 @@
-rootProject.name = "TeamXServer"
+rootProject.name = "pHeed-server"

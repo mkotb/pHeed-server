@@ -1,14 +1,14 @@
-package com.teamx.server
+package com.pheed.server
 
 import com.google.gson.GsonBuilder
+import com.pheed.server.routes.AnalysisController
+import com.pheed.server.routes.ErrorException
+import com.pheed.server.routes.ErrorResponse
+import com.pheed.server.routes.InvalidRequestError
 import com.squareup.moshi.JsonDataException
 import com.squareup.moshi.JsonEncodingException
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
-import com.teamx.server.routes.AnalysisController
-import com.teamx.server.routes.ErrorException
-import com.teamx.server.routes.ErrorResponse
-import com.teamx.server.routes.InvalidRequestError
 import io.javalin.Javalin
 import io.javalin.apibuilder.ApiBuilder.path
 import io.javalin.apibuilder.ApiBuilder.post
@@ -54,7 +54,8 @@ fun initServer(port: Int): Javalin {
     }
 
     app.exception(JsonDataException::class.java) { ex, context ->
-        handleError(InvalidRequestError(ex.message ?: "JSON did not match request schema"), context)
+        handleError(InvalidRequestError(ex.message
+                ?: "JSON did not match request schema"), context)
     }
 
     app.exception(JsonEncodingException::class.java) { _, context ->

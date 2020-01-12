@@ -1,4 +1,4 @@
-package com.teamx.server.model
+package com.pheed.server.model
 
 import jp.nephy.penicillin.extensions.likeCount
 import jp.nephy.penicillin.models.Status

@@ -1,4 +1,4 @@
-package com.teamx.server.integration
+package com.pheed.server.integration
 
 import jp.nephy.penicillin.PenicillinClient
 import jp.nephy.penicillin.core.session.config.account

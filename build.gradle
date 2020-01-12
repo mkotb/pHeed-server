@@ -72,7 +72,7 @@ appengine {
 
 jar {
     manifest {
-        attributes 'Main-Class': 'com.teamx.server.ServerKt'
+        attributes 'Main-Class': 'com.pheed.server.ServerKt'
     }
 
     from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }

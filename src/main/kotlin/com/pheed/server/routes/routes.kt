@@ -1,4 +1,4 @@
-package com.teamx.server.routes
+package com.pheed.server.routes
 
 open class SuccessfulResponse(val success: Boolean = true)
 open class ErrorException(val error: ErrorResponse) : Exception()
